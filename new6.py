@@ -211,7 +211,7 @@ class StreamlitCalculator:
     # UI
     # ------------------------
     def run(self):
-        st.title("🧪 试剂配方计算器（模板版）")
+        st.title("试剂配方计算")
 
         formula = st.text_area(
             "配方输入",
@@ -292,3 +292,4 @@ class StreamlitCalculator:
 if __name__ == "__main__":
     st.set_page_config(page_title="试剂配方计算器", page_icon="🧪", layout="wide")
     StreamlitCalculator().run()
+
