@@ -170,29 +170,45 @@ class StreamlitCalculator:
         return results
 
     # ------------------------
-    # 写入 Excel（模板版）
+    # 写入 Excel - 修复版本（清除多余的水列）
     # ------------------------
     def write_to_excel(self, formula_input, results, total_ml):
         try:
             wb = load_workbook("template.xlsx")
             ws = wb.active
 
+            # 写入基本信息
             ws["C5"] = datetime.now().strftime("%Y-%m-%d")
             ws["C6"] = formula_input
             ws["G6"] = f"{total_ml/1000:.2f} L"
 
-            start_col = 3
-            comps = [(k, v) for k, v in results["components"].items() if k != "水"]
+            # 清除之前可能存在的数据（从C列到H列）
+            for col in range(3, 9):  # C到H列
+                col_letter = get_column_letter(col)
+                ws[f"{col_letter}8"] = None  # 清除组分名
+                ws[f"{col_letter}11"] = None  # 清除浓度
+                ws[f"{col_letter}12"] = None  # 清除质量
+                ws[f"{col_letter}13"] = None  # 清除体积
 
+            # 获取所有组分，不包括水
+            comps = [(k, v) for k, v in results["components"].items() if k != "水"]
+            
+            # 写入组分数据
             for i, (name, comp) in enumerate(comps):
-                col = get_column_letter(start_col + i)
+                col = get_column_letter(3 + i)  # 从C列开始
                 ws[f"{col}8"] = name
                 ws[f"{col}11"] = comp["target"]
-                ws[f"{col}12"] = round(comp["mass"], 2) if comp["mass"] > 0 else "-"
-                ws[f"{col}13"] = round(comp["volume"], 2) if comp["volume"] > 0 else "-"
+                if comp["volume"] > 0:
+                    ws[f"{col}12"] = round(comp["mass"], 2) if comp["mass"] > 0 else "-"
+                    ws[f"{col}13"] = round(comp["volume"], 2)
+                else:
+                    ws[f"{col}12"] = round(comp["mass"], 4) if comp["mass"] > 0 else "-"
+                    ws[f"{col}13"] = "-"
 
-            water_col = get_column_letter(start_col + len(comps))
+            # 写入水（在最后一个组分之后）
+            water_col = get_column_letter(3 + len(comps))
             ws[f"{water_col}8"] = "水"
+            ws[f"{water_col}11"] = "-"
             ws[f"{water_col}12"] = round(results["components"]["水"]["mass"], 2)
             ws[f"{water_col}13"] = round(results["components"]["水"]["volume"], 2)
 
@@ -211,7 +227,7 @@ class StreamlitCalculator:
     # UI
     # ------------------------
     def run(self):
-        st.title("试剂配方计算")
+        st.title("🧪 试剂配方计算器（模板版）")
 
         formula = st.text_area(
             "配方输入",
@@ -292,4 +308,3 @@ class StreamlitCalculator:
 if __name__ == "__main__":
     st.set_page_config(page_title="试剂配方计算器", page_icon="🧪", layout="wide")
     StreamlitCalculator().run()
-
